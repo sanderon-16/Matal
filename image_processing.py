@@ -3,27 +3,29 @@ import numpy as np
 
 
 class LaserPatternDetector:
-    def __init__(self, camera_index=1, delay=0.1):
+    def __init__(self, camera_index=1, delay=0.1 ,pattern_function=None, n_frames=10):
         self.camera = cv2.VideoCapture(camera_index)
         if not self.camera.isOpened():
             raise Exception("Could not open camera.")
         self.delay = delay
         self.frames = []
+        self.pattern_function = pattern_function
+        self.n_frames = n_frames
 
-    def capture_frames(self, n):
+    def capture_frames(self):
         self.frames = []
-        for i in range(n):
+        for i in range(self.n_frames):
             ret, frame = self.camera.read()
             if not ret:
                 raise Exception("Could not capture frame.")
             self.frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
-            print(f"Captured frame {i + 1}/{n}")
+            print(f"Captured frame {i + 1}/{self.n_frames}")
             # Optional: Display each captured frame (commented out for efficiency)
             cv2.imshow("frame", self.frames[-1])
             cv2.waitKey(0)
 
-    def detect_laser_pattern(self, pattern_function):
-        pattern = np.array(pattern_function(), dtype=np.float32)
+    def detect_laser_pattern(self):
+        pattern = np.array(self.pattern_function(), dtype=np.float32)
         if len(pattern) > len(self.frames):
             raise ValueError("Pattern length exceeds the number of frames captured.")
         pattern = pattern[:len(self.frames)]
@@ -66,10 +68,10 @@ if __name__ == "__main__":
     def pattern_function():
         return [0, 1, 0, 0, 1, 0, 0, 1, 1]
 
-    detector = LaserPatternDetector(delay=0.2)
+    detector = LaserPatternDetector(camera_index=0, delay=0.2, pattern_function=pattern_function, n_frames=9)
     try:
-        detector.capture_frames(n=9)
-        laser_spot = detector.detect_laser_pattern(pattern_function)
+        detector.capture_frames()
+        laser_spot = detector.detect_laser_pattern()
         if laser_spot:
             print(f"Laser detected at {laser_spot}")
             # Visualize the detected laser spot
